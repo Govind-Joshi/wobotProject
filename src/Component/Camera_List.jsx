@@ -1,85 +1,94 @@
-import React,{useState,useEffect} from 'react'
-import "../css/Camera_List.css"
+import React, { useState, useMemo, useCallback } from "react";
+import "../css/Camera_List.css";
 import BrandLogo from "../icon/BrandLogo.png";
-import SearchBar from './Serach_bar';
-import Filters from "./Filter"
-import CameraTable from './CameraTable';
-import useUpdateCameraStatus from '../Util/useUpdateCameraStatus';
-
-// const BASE_URL = "https://api-app-staging.wobot.ai/app/v1";
-// const AUTH_TOKEN = "4ApVMIn5sTxeW7GQ5VWeWiy";
-
+import SearchBar from "./Serach_bar";
+import Filters from "./Filter";
+import CameraTable from "./CameraTable";
+import useUpdateCameraStatus from "../Util/useUpdateCameraStatus";
 
 function Camera_List() {
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedLocation, setSelectedLocation] = useState("");
-    const [selectedStatus, setSelectedStatus] = useState("");
-    const [DeleteItem, setDeleteItem] = useState(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [DeleteItem, setDeleteItem] = useState(new Set());
 
-const { cameras, loading, error, updateCameraStatus } = useUpdateCameraStatus();
-let loction = cameras.map((a)=>a.location)
-let loc = new Set(loction);
-console.log(cameras,"<===>",loc,"loc")
+  const { cameras, updateCameraStatus } = useUpdateCameraStatus();
 
-// i handle  child component state in parent component with help of call backs
-function hadleDelete(value){  
+  // here we memoize locations to avoid recalculating them on every render
+  const loc = useMemo(() => new Set(cameras.map((a) => a.location)), [cameras]);
 
+  //here i  handle delete action,also memoized to avoid unnecessary re-renders
+  const handleDelete = useCallback((value) => {
     setDeleteItem((prev) => {
-        const updatedSet = new Set(prev); 
-        updatedSet.add(value); 
-        return updatedSet; 
-      });
-
-}
-
-
- {/*loction fiter filter*/}
-function  applyFilters(){
-    const filteredloction = selectedLocation 
-    ? cameras.filter(item => item.location === selectedLocation)
-    : cameras;
-
-       {/*status filter*/}
-    const fliterstatus = selectedStatus                             
-    ? filteredloction.filter(item => item.status === selectedStatus)
-    : filteredloction;
-    
-     {/*here i apply search query filter*/}
-    const filteredData = fliterstatus.filter((item) => {      
-      
-        const searchQueryLower = searchQuery.toLowerCase();
-        return (
-          item.name.toLowerCase().includes(searchQueryLower) ||
-          item.location.toLowerCase().includes(searchQueryLower) ||
-          item.status.toLowerCase().includes(searchQueryLower) ||
-          item.recorder.toLowerCase().includes(searchQueryLower)
-        );
-      });
-    
-      {/* here i remove deleted item*/}
-      const removeDeleteItem =                               
-      DeleteItem.size > 0 
-        ? filteredData.filter(item => !DeleteItem.has(item._id)) 
-        : filteredData;
-
-        return removeDeleteItem;
-
-}
-
- const reciveFilterData = applyFilters();
+      const updatedSet = new Set(prev);
+      updatedSet.add(value);
+      return updatedSet;
+    });
+  }, []);
 
 
+
+  // here we  apply filters,and memoized to recalculate only when dependencies change
+  const reciveFilterData = useMemo(() => {
+
+    const filteredLocation = selectedLocation
+      ? cameras.filter((item) => item.location === selectedLocation)
+      : cameras;
+
+  
+    const filteredStatus = selectedStatus
+      ? filteredLocation.filter((item) => item.status === selectedStatus)
+      : filteredLocation;
+
+
+    const filteredSearch = filteredStatus.filter((item) => {
+      const searchQueryLower = searchQuery.toLowerCase();
+      return (
+        item.name.toLowerCase().includes(searchQueryLower) ||
+        item.location.toLowerCase().includes(searchQueryLower) ||
+        item.status.toLowerCase().includes(searchQueryLower) ||
+        item.recorder.toLowerCase().includes(searchQueryLower)
+      );
+    });
+
+    return DeleteItem.size > 0
+      ? filteredSearch.filter((item) => !DeleteItem.has(item._id))
+      : filteredSearch;
+  }, [cameras, selectedLocation, selectedStatus, searchQuery, DeleteItem]);
+
+
+
+
+  //here we memoize callback for updating status
+  const handleUpdateStatus = useCallback((id, status) => {
+    updateCameraStatus(id, status);
+  }, [updateCameraStatus]);
+
+  
 
   return (
-    <div >
-<header>
- <img src={BrandLogo} id='BrandLogo' alt="BrandLogo" />   
-</header>
-<SearchBar  callback_search={(value)=>setSearchQuery(value)} searchQuery={searchQuery} ></SearchBar>
-<Filters  loction_data={loc} callback_loction={(value)=>setSelectedLocation(value)} selectedLocation={selectedLocation} callback_status={(value)=>setSelectedStatus(value)} selectedStatus={selectedStatus} ></Filters>
-<CameraTable data={reciveFilterData} callback_delete={(id)=>hadleDelete(id)} callback_update_Status={(id,status)=>updateCameraStatus(id,status)}   />
+    <div>
+      <header>
+        <img src={BrandLogo} id="BrandLogo" alt="BrandLogo" />
+      </header>
+      <SearchBar
+        callback_search={useCallback((value) => setSearchQuery(value), [])}
+        searchQuery={searchQuery}
+      />
+      <Filters
+        loction_data={loc}
+        callback_loction={useCallback((value) => setSelectedLocation(value), [])}
+        selectedLocation={selectedLocation}
+        callback_status={useCallback((value) => setSelectedStatus(value), [])}
+        selectedStatus={selectedStatus}
+      />
+      <CameraTable
+        data={reciveFilterData}
+        callback_delete={handleDelete}
+        callback_update_Status={handleUpdateStatus}
+      />
     </div>
-  )
+  );
 }
 
-export default Camera_List
+export default Camera_List;

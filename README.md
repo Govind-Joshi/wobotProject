@@ -25,6 +25,8 @@ This project is a web-based application that displays a table of cameras with th
    - Allows users to toggle the status (active/inactive) of a camera.
 5. **Delete Row**:
    - Removes a camera entry from the table.
+6. **Efficient redring**
+- optimise code with help of usecallback and usememo hooks
 
 ## Getting Started
 

@@ -1,4 +1,4 @@
-import React,{useState,useMemo} from "react";
+import React,{useState,useMemo,useEffect} from "react";
 import "../css/CameraTable.css";
 import delete_icon from "../icon/DELETE.png"
 
@@ -17,19 +17,24 @@ function CameraTable({ data,callback_delete,callback_update_Status }) {
   
     // }
 
+    useEffect(()=>{
+        setpagen(1);
+    },[data])
+
+
     const [pagen, setpagen] = useState(1);
   
     // const totalPages = useMemo(() => Math.ceil(data.length / 10), []);
     const totalPages =  Math.ceil(data.length / 10)
     {/*here i set limit of max and min ragne if data rendring*/}
-    const maxIndex = pagen * 10;      
-    const minIndex = maxIndex - 10;
+    const maxIndex =data.length<10?data.length:pagen * 10;      
+    const minIndex = maxIndex - 10<0?0:maxIndex - 10
   
 
 
     {/*if page number is more then 0 and equal to max limit of pages then set value*/}
     const handlePageClick = (pageNumber) => {
-        // console.log(pageNumber,"pagenumber....")
+       
       if (pageNumber > 0 && pageNumber <= totalPages) {
         setpagen(pageNumber);
       }
