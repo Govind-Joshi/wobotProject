@@ -1,0 +1,19 @@
+
+
+
+header{
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 4px;
+ 
+   }
+
+   #Serach_bar_box{
+display: flex;
+flex-direction: row;
+justify-content: space-between;
+
+   }
+
+
